@@ -1,3 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MyPassword</string>
+    <string name="title_activity_my_password_settings">MyPassword Settings</string>
+    <string name="master_password_label">Password:</string>
+    <string name="account_type">com.kduborenko.mypassword</string>
 </resources>
