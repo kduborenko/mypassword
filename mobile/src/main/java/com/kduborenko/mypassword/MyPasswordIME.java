@@ -6,8 +6,11 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.inputmethodservice.InputMethodService;
 import android.os.IBinder;
+import android.text.InputType;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
@@ -41,6 +44,16 @@ public class MyPasswordIME extends InputMethodService {
 	}
 
 	@Override
+	public void onStartInputView(EditorInfo info, boolean restarting) {
+		super.onStartInputView(info, restarting);
+		boolean password = (info.inputType & InputType.TYPE_TEXT_VARIATION_PASSWORD) != 0;
+		if (!password) {
+			InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+			imm.switchToNextInputMethod(MyPasswordIME.this.getWindow().getWindow().getAttributes().token, false);
+		}
+	}
+
+	@Override
 	public void onDestroy() {
 		super.onDestroy();
 		unbindService(mConn);
@@ -50,8 +63,7 @@ public class MyPasswordIME extends InputMethodService {
 	public View onCreateInputView() {
 		final View inputView = getLayoutInflater().inflate( R.layout.input, null);
 
-		Button okButton = (Button) inputView.findViewById(R.id.ok);
-		okButton.setOnClickListener(new View.OnClickListener() {
+		inputView.findViewById(R.id.ok).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				InputConnection ic = getCurrentInputConnection();
@@ -61,12 +73,32 @@ public class MyPasswordIME extends InputMethodService {
 			}
 		});
 
+		inputView.findViewById(R.id.clear).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				InputConnection ic = getCurrentInputConnection();
+				ic.deleteSurroundingText(Integer.MAX_VALUE, Integer.MAX_VALUE);
+			}
+		});
+
 		Spinner siteSpinner = (Spinner) inputView.findViewById(R.id.spinner);
 		final ArrayAdapter<String> adapter = new ArrayAdapter<>(
 			this, android.R.layout.simple_spinner_item, mAccountService.getSitesList());
 		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		siteSpinner.setAdapter(adapter);
 
+		Button nextLayout = (Button) inputView.findViewById(R.id.nextLayout);
+		nextLayout.setText("\uD83C\uDF10");
+		nextLayout.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+				imm.switchToNextInputMethod(MyPasswordIME.this.getWindow().getWindow().getAttributes().token, false);
+			}
+		});
+
 		return inputView;
 	}
+
+
 }
