@@ -15,20 +15,33 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 public class MyPasswordIME extends InputMethodService {
 
-	private AccountService mAccountService;
+	private static final Map<String, String> KNOWN_APPS
+		= Collections.unmodifiableMap(new HashMap<String, String>()
+	{{
+		put("com.android.vending", "google.com");
+		put("com.alibaba.aliexpresshd", "aliexpress.com");
+		put("com.ubercab", "uber.com");
+	}});
+
+	private Spinner siteSpinner;
+	private AccountService accountService;
 
 	private ServiceConnection mConn = new ServiceConnection() {
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			AccountService.AccountBinder ab = (AccountService.AccountBinder) service;
-			mAccountService = ab.getService();
+			accountService = ab.getService();
 		}
 
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
-			mAccountService = null;
+			accountService = null;
 		}
 	};
 
@@ -50,7 +63,24 @@ public class MyPasswordIME extends InputMethodService {
 		if (!password) {
 			InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 			imm.switchToNextInputMethod(MyPasswordIME.this.getWindow().getWindow().getAttributes().token, false);
+		} else {
+			String presumableSiteName = findAccountName(info.packageName);
+
+			@SuppressWarnings("unchecked") ArrayAdapter<String> adapter
+				= (ArrayAdapter<String>) siteSpinner.getAdapter();
+			if (adapter.getPosition(presumableSiteName) == -1) {
+				adapter.add(presumableSiteName);
+			}
+			siteSpinner.setSelection(adapter.getPosition(presumableSiteName));
 		}
+	}
+
+	private String findAccountName(String packageName) {
+		if (KNOWN_APPS.containsKey(packageName)) {
+			return KNOWN_APPS.get(packageName);
+		}
+		String[] packageNameParts = packageName.split("\\.");
+		return packageNameParts[1] + "." + packageNameParts[0];
 	}
 
 	@Override
@@ -61,7 +91,7 @@ public class MyPasswordIME extends InputMethodService {
 
 	@Override
 	public View onCreateInputView() {
-		final View inputView = getLayoutInflater().inflate( R.layout.input, null);
+		final View inputView = getLayoutInflater().inflate(R.layout.input, null);
 
 		inputView.findViewById(R.id.ok).setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -69,7 +99,7 @@ public class MyPasswordIME extends InputMethodService {
 				InputConnection ic = getCurrentInputConnection();
 				Spinner siteSpinner = (Spinner) inputView.findViewById(R.id.spinner);
 				String siteName = (String) siteSpinner.getSelectedItem();
-				ic.commitText(mPasswordGenerator.generatePassword(siteName, mAccountService.getPassword()), 1);
+				ic.commitText(mPasswordGenerator.generatePassword(siteName, accountService.getPassword()), 1);
 			}
 		});
 
@@ -81,9 +111,9 @@ public class MyPasswordIME extends InputMethodService {
 			}
 		});
 
-		Spinner siteSpinner = (Spinner) inputView.findViewById(R.id.spinner);
+		siteSpinner = (Spinner) inputView.findViewById(R.id.spinner);
 		final ArrayAdapter<String> adapter = new ArrayAdapter<>(
-			this, android.R.layout.simple_spinner_item, mAccountService.getSitesList());
+			this, android.R.layout.simple_spinner_item, accountService.getSitesList());
 		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		siteSpinner.setAdapter(adapter);
 

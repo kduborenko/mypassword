@@ -55,11 +55,11 @@ public class AccountService extends Service {
 		try {
 			String sitesListJson = am.getUserData(getAccount(), "sitesList");
 			if (sitesListJson == null) {
-				return Arrays.asList();
+				return new ArrayList<>();
 			}
 			return toList(new JSONArray(sitesListJson));
 		} catch (JSONException e) {
-			return Arrays.asList();
+			return new ArrayList<>();
 		}
 	}
 
