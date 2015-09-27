@@ -2,5 +2,6 @@
 /local.properties
 /.idea
 *.iml
+mobile/*.iml
 .DS_Store
 /build
