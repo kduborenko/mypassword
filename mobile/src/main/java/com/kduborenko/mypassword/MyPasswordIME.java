@@ -31,6 +31,7 @@ public class MyPasswordIME extends InputMethodService {
 
 	private Spinner siteSpinner;
 	private AccountService accountService;
+	private boolean initialValueSet = false;
 
 	private ServiceConnection mConn = new ServiceConnection() {
 		@Override
@@ -63,7 +64,7 @@ public class MyPasswordIME extends InputMethodService {
 		if (!password) {
 			InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 			imm.switchToNextInputMethod(MyPasswordIME.this.getWindow().getWindow().getAttributes().token, false);
-		} else {
+		} else if (!initialValueSet) {
 			String presumableSiteName = findAccountName(info.packageName);
 
 			@SuppressWarnings("unchecked") ArrayAdapter<String> adapter
@@ -72,6 +73,7 @@ public class MyPasswordIME extends InputMethodService {
 				adapter.add(presumableSiteName);
 			}
 			siteSpinner.setSelection(adapter.getPosition(presumableSiteName));
+			initialValueSet = true;
 		}
 	}
 
